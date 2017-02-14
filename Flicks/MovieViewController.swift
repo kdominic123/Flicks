@@ -15,6 +15,7 @@ class MovieViewController: UIViewController, UITableViewDataSource, UITableViewD
     @IBOutlet weak var tableView: UITableView!
     
     var movies: [NSDictionary]?
+    var endpoint: String!
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -34,7 +35,7 @@ class MovieViewController: UIViewController, UITableViewDataSource, UITableViewD
         tableView.insertSubview(refreshControl, at: 0)
         
         let apiKey = "a07e22bc18f5cb106bfe4cc1f83ad8ed"
-        let url = URL(string: "https://api.themoviedb.org/3/movie/now_playing?api_key=\(apiKey)")!
+        let url = URL(string: "https://api.themoviedb.org/3/movie/" + (endpoint) + "?api_key=\(apiKey)")!
         let request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
         
@@ -50,6 +51,7 @@ class MovieViewController: UIViewController, UITableViewDataSource, UITableViewD
                     MBProgressHUD.hide(for: self.view, animated: true)
                     
                     self.tableView.reloadData()
+                    
                 }
             }
         }
@@ -63,7 +65,7 @@ class MovieViewController: UIViewController, UITableViewDataSource, UITableViewD
         let request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
         
-        MBProgressHUD.showAdded(to: self.view, animated: true)
+        //MBProgressHUD.showAdded(to: self.view, animated: true)
         
         let task: URLSessionDataTask = session.dataTask(with: request) { (data: Data?, response: URLResponse?, error: Error?) in
             if let data = data {
@@ -72,9 +74,10 @@ class MovieViewController: UIViewController, UITableViewDataSource, UITableViewD
                     
                     self.movies = dataDictionary["results"] as! [NSDictionary]
                     
-                    MBProgressHUD.hide(for: self.view, animated: true)
+                    //MBProgressHUD.hide(for: self.view, animated: true)
                     
                     self.tableView.reloadData()
+                    refreshControl.endRefreshing()
                 }
             }
         }
@@ -96,32 +99,45 @@ class MovieViewController: UIViewController, UITableViewDataSource, UITableViewD
     {
         let cell = tableView.dequeueReusableCell(withIdentifier: "MovieCell", for: indexPath) as! MovieCell
         
+        cell.selectionStyle = .none
+        
         let movie = movies![indexPath.row]
         let title = movie["title"] as! String
         let overview = movie["overview"] as! String
+        
         let baseURL = "https://image.tmdb.org/t/p/w500/"
-        let posterPath = movie["poster_path"] as! String
-        let imageURL = NSURL(string: baseURL + posterPath)
-        
-        //Issue
-        //setImageWithURL method cannot be found??
-        
+        if let posterPath = movie["poster_path"] as? String
+        {
+            let imageURL = NSURL(string: baseURL + posterPath)
+            cell.posterView.setImageWith(imageURL! as URL)
+        }
         
         cell.titleLabel.text = title
         cell.overviewLabel.text = overview
-        cell.posterView.setImageWith(imageURL! as URL)
+        
         
         print("row\(indexPath.row)")
         return cell
     }
-    /*
+    
     // MARK: - Navigation
 
     // In a storyboard-based application, you will often want to do a little preparation before navigation
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        
+        print("prepare for segue called")
+        
+        let cell = sender as! UITableViewCell
+        let indexPath = tableView.indexPath(for: cell)
+        let movie = movies![indexPath!.row]
+        
+        let detailViewController = segue.destination as! DetailViewController
+        detailViewController.movie = movie
+        
+        
         // Get the new view controller using segue.destinationViewController.
         // Pass the selected object to the new view controller.
     }
-    */
+    
 }
 
